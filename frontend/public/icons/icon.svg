@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#1e2a4a"/>
+  <circle cx="230" cy="230" r="120" fill="none" stroke="#f5a623" stroke-width="36"/>
+  <line x1="318" y1="318" x2="420" y2="420" stroke="#f5a623" stroke-width="44" stroke-linecap="round"/>
+  <text x="230" y="262" font-family="Arial, sans-serif" font-size="120" font-weight="bold" fill="#ffffff" text-anchor="middle" dominant-baseline="middle">Ð</text>
+</svg>

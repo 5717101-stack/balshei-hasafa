@@ -1,0 +1,33 @@
+steps:
+  # Run backend tests before building the image
+  - name: 'python:3.11-slim'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - 'pip install --no-cache-dir -r requirements.txt && python -m pytest -x -q'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'europe-west1-docker.pkg.dev/$PROJECT_ID/second-brain-eu/balshei-hasafa:$SHORT_SHA', '.']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'europe-west1-docker.pkg.dev/$PROJECT_ID/second-brain-eu/balshei-hasafa:$SHORT_SHA']
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'balshei-hasafa'
+      - '--image=europe-west1-docker.pkg.dev/$PROJECT_ID/second-brain-eu/balshei-hasafa:$SHORT_SHA'
+      - '--region=europe-west1'
+      - '--platform=managed'
+      - '--port=8080'
+      - '--allow-unauthenticated'
+      - '--memory=512Mi'
+      - '--max-instances=2'
+
+images:
+  - 'europe-west1-docker.pkg.dev/$PROJECT_ID/second-brain-eu/balshei-hasafa:$SHORT_SHA'
+
+options:
+  logging: CLOUD_LOGGING_ONLY

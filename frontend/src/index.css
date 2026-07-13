@@ -1,0 +1,208 @@
+:root {
+  --bg: #fdf6ec;
+  --paper: #ffffff;
+  --ink: #1e2a4a;
+  --ink-soft: #5a6482;
+  --gold: #f5a623;
+  --teal: #2fbf8f;
+  --coral: #f76f4f;
+  --blue: #4f8ef7;
+  --purple: #9b5ef7;
+  --rose: #e85d75;
+  --green-ok: #2fbf8f;
+  --red-bad: #e85d75;
+  --shadow: 0 6px 24px rgba(30, 42, 74, 0.12);
+  --radius: 22px;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Rubik', system-ui, sans-serif;
+  min-height: 100dvh;
+}
+
+#root {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+button {
+  font-family: inherit;
+  border: none;
+  cursor: pointer;
+  background: none;
+  color: inherit;
+}
+
+.app-shell {
+  width: 100%;
+  max-width: 640px;
+  margin-inline: auto;
+  padding: 16px;
+  padding-bottom: calc(24px + env(safe-area-inset-bottom));
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- shared bits --- */
+
+.card {
+  background: var(--paper);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, var(--gold), #f7c04f);
+  color: #4a3200;
+  font-weight: 800;
+  font-size: 18px;
+  padding: 14px 28px;
+  border-radius: 999px;
+  box-shadow: 0 4px 14px rgba(245, 166, 35, 0.4);
+  transition: transform 0.15s ease;
+}
+
+.btn-primary:active {
+  transform: scale(0.96);
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink);
+  opacity: 0.75;
+  font-weight: 600;
+  font-size: 15px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: rgba(30, 42, 74, 0.06);
+}
+
+.screen-title {
+  font-size: 26px;
+  font-weight: 900;
+  margin: 8px 0 4px;
+}
+
+.screen-subtitle {
+  font-size: 15px;
+  opacity: 0.7;
+  margin: 0 0 16px;
+}
+
+/* option buttons used across games */
+.option-btn {
+  width: 100%;
+  background: var(--paper);
+  border: 3px solid rgba(30, 42, 74, 0.1);
+  border-radius: 18px;
+  padding: 14px 18px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+  text-align: center;
+  transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+  min-height: 58px;
+}
+
+.option-btn:active {
+  transform: scale(0.97);
+}
+
+.option-btn.correct {
+  border-color: var(--green-ok);
+  background: #e8faf3;
+}
+
+.option-btn.wrong {
+  border-color: var(--red-bad);
+  background: #fdecef;
+  animation: shake 0.4s ease;
+}
+
+.option-btn.dim {
+  opacity: 0.45;
+}
+
+.option-btn.selected {
+  border-color: var(--blue);
+  background: #edf4ff;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  50% { transform: translateX(6px); }
+  75% { transform: translateX(-4px); }
+}
+
+@keyframes pop {
+  0% { transform: scale(0.6); opacity: 0; }
+  70% { transform: scale(1.08); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.pop {
+  animation: pop 0.35s ease both;
+}
+
+/* progress bar in game screen */
+.round-progress {
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(30, 42, 74, 0.1);
+  overflow: hidden;
+  flex: 1;
+}
+
+.round-progress > div {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--gold), var(--coral));
+  transition: width 0.35s ease;
+}
+
+/* XP bar */
+.xp-bar {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.25);
+  overflow: hidden;
+}
+
+.xp-bar > div {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ffd66b, #ffb347);
+  transition: width 0.6s ease;
+}
+
+.stamp {
+  display: inline-block;
+  border: 4px solid var(--teal);
+  color: var(--teal);
+  border-radius: 12px;
+  padding: 6px 18px;
+  font-weight: 900;
+  font-size: 22px;
+  transform: rotate(-8deg);
+  text-transform: uppercase;
+}

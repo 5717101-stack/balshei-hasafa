@@ -1,0 +1,20 @@
+{
+  "name": "בלשי השפה",
+  "short_name": "בלשי השפה",
+  "description": "משחק תרגול שפה לכיתה ד' — שורשים, סוגי מילים, מילות קישור ועוד",
+  "dir": "rtl",
+  "lang": "he",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fdf6ec",
+  "theme_color": "#1e2a4a",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
