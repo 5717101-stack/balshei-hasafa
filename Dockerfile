@@ -2,7 +2,9 @@
 FROM node:24-alpine AS frontend
 WORKDIR /build
 COPY frontend/package.json frontend/package-lock.json ./
-RUN npm ci
+# npm install (not ci): the lockfile is generated on macOS and misses
+# linux-only optional deps (@emnapi/*) — npm ci refuses that mismatch.
+RUN npm install --no-audit --no-fund
 COPY frontend/ ./
 RUN npm run build
 
