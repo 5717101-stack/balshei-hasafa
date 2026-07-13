@@ -2,6 +2,8 @@ export interface Profile {
   id: string
   name: string
   avatar: string
+  link_code?: string
+  device_ids?: string[]
 }
 
 export interface Rank {
@@ -45,7 +47,8 @@ export interface RoundSummary {
 }
 
 export interface LeaderboardRow {
-  id: string
+  id: string | null
+  is_me: boolean
   name: string
   avatar: string
   xp: number

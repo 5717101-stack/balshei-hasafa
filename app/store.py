@@ -8,6 +8,7 @@ in-memory fallback for local dev and tests. Collections:
 from __future__ import annotations
 
 import logging
+import random
 import threading
 import uuid
 from datetime import date, datetime, timezone
@@ -20,6 +21,11 @@ logger = logging.getLogger(__name__)
 PROFILES_COLLECTION = "safa_profiles"
 PROGRESS_COLLECTION = "safa_progress"
 HISTORY_CAP = 50
+
+
+def _new_link_code() -> str:
+    """6-digit join code a kid can read off one device and type on another."""
+    return f"{random.randint(0, 999999):06d}"
 
 
 def _progress_to_doc(p: Progress) -> dict:
@@ -68,24 +74,39 @@ class MemoryStore:
         self._history: dict = {}
         self._lock = threading.Lock()
 
-    def list_profiles(self) -> list:
+    def list_profiles(self, device_id: Optional[str] = None) -> list:
         with self._lock:
-            return sorted(self._profiles.values(), key=lambda p: p["created_at"])
+            profiles = sorted(self._profiles.values(), key=lambda p: p["created_at"])
+        if device_id is not None:
+            profiles = [p for p in profiles if device_id in (p.get("device_ids") or [])]
+        return profiles
 
     def get_profile(self, profile_id: str) -> Optional[dict]:
         with self._lock:
             return self._profiles.get(profile_id)
 
-    def create_profile(self, name: str, avatar: str) -> dict:
+    def create_profile(self, name: str, avatar: str, device_id: str) -> dict:
         profile = {
             "id": uuid.uuid4().hex[:12],
             "name": name,
             "avatar": avatar,
+            "device_ids": [device_id],
+            "link_code": _new_link_code(),
             "created_at": datetime.now(timezone.utc).isoformat(),
         }
         with self._lock:
             self._profiles[profile["id"]] = profile
         return profile
+
+    def link_device(self, link_code: str, device_id: str) -> Optional[dict]:
+        with self._lock:
+            for profile in self._profiles.values():
+                if profile.get("link_code") == link_code:
+                    devices = profile.setdefault("device_ids", [])
+                    if device_id not in devices:
+                        devices.append(device_id)
+                    return profile
+        return None
 
     def get_progress(self, profile_id: str) -> Progress:
         with self._lock:
@@ -114,8 +135,14 @@ class FirestoreStore:
         # Probe the connection early so callers can fall back cleanly.
         next(iter(self._db.collection(PROFILES_COLLECTION).limit(1).stream()), None)
 
-    def list_profiles(self) -> list:
-        docs = self._db.collection(PROFILES_COLLECTION).stream()
+    def list_profiles(self, device_id: Optional[str] = None) -> list:
+        collection = self._db.collection(PROFILES_COLLECTION)
+        if device_id is not None:
+            from google.cloud.firestore_v1 import FieldFilter
+
+            docs = collection.where(filter=FieldFilter("device_ids", "array_contains", device_id)).stream()
+        else:
+            docs = collection.stream()
         profiles = [{"id": d.id, **(d.to_dict() or {})} for d in docs]
         return sorted(profiles, key=lambda p: p.get("created_at") or "")
 
@@ -125,15 +152,37 @@ class FirestoreStore:
             return None
         return {"id": snap.id, **(snap.to_dict() or {})}
 
-    def create_profile(self, name: str, avatar: str) -> dict:
+    def create_profile(self, name: str, avatar: str, device_id: str) -> dict:
         profile_id = uuid.uuid4().hex[:12]
         data = {
             "name": name,
             "avatar": avatar,
+            "device_ids": [device_id],
+            "link_code": _new_link_code(),
             "created_at": datetime.now(timezone.utc).isoformat(),
         }
         self._db.collection(PROFILES_COLLECTION).document(profile_id).set(data)
         return {"id": profile_id, **data}
+
+    def link_device(self, link_code: str, device_id: str) -> Optional[dict]:
+        from google.cloud.firestore_v1 import ArrayUnion, FieldFilter
+
+        docs = list(
+            self._db.collection(PROFILES_COLLECTION)
+            .where(filter=FieldFilter("link_code", "==", link_code))
+            .limit(1)
+            .stream()
+        )
+        if not docs:
+            return None
+        doc = docs[0]
+        doc.reference.update({"device_ids": ArrayUnion([device_id])})
+        data = doc.to_dict() or {}
+        devices = data.get("device_ids") or []
+        if device_id not in devices:
+            devices.append(device_id)
+        data["device_ids"] = devices
+        return {"id": doc.id, **data}
 
     def get_progress(self, profile_id: str) -> Progress:
         snap = self._db.collection(PROGRESS_COLLECTION).document(profile_id).get()

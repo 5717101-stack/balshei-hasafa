@@ -108,6 +108,19 @@ export function ProgressScreen({
           ))}
         </div>
       )}
+
+      {profile.link_code && (
+        <div className="card" style={{ marginTop: 18, textAlign: 'center' }}>
+          <div style={{ fontWeight: 800, fontSize: 16 }}>🔑 קוד הסוכן שלי</div>
+          <div style={{ fontWeight: 900, fontSize: 30, letterSpacing: 8, direction: 'ltr', margin: '6px 0' }}>
+            {profile.link_code}
+          </div>
+          <div style={{ fontSize: 13, opacity: 0.65 }}>
+            רוצים לשחק גם מטאבלט או מחשב אחר? במסך הכניסה שם בוחרים
+            "יש לי כבר בלש במכשיר אחר" ומקלידים את הקוד.
+          </div>
+        </div>
+      )}
     </div>
   )
 }

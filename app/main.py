@@ -38,6 +38,12 @@ def _today_il() -> date:
 class ProfileCreate(BaseModel):
     name: str = Field(min_length=1, max_length=30)
     avatar: str = Field(min_length=1, max_length=8)
+    device_id: str = Field(min_length=8, max_length=64)
+
+
+class ProfileLink(BaseModel):
+    link_code: str = Field(min_length=6, max_length=6)
+    device_id: str = Field(min_length=8, max_length=64)
 
 
 class RoundSubmit(BaseModel):
@@ -73,8 +79,11 @@ def version() -> dict:
 
 
 @app.get("/api/profiles")
-def list_profiles(store=Depends(get_store)) -> dict:
-    return {"profiles": store.list_profiles()}
+def list_profiles(device_id: Optional[str] = None, store=Depends(get_store)) -> dict:
+    # Profiles are device-scoped: without a device_id nothing is exposed.
+    if not device_id:
+        return {"profiles": []}
+    return {"profiles": store.list_profiles(device_id=device_id)}
 
 
 @app.post("/api/profiles")
@@ -82,11 +91,20 @@ def create_profile(body: ProfileCreate, store=Depends(get_store)) -> dict:
     name = body.name.strip()
     if not name:
         raise HTTPException(status_code=400, detail="שם ריק")
-    existing = [p for p in store.list_profiles() if p["name"] == name]
+    existing = [p for p in store.list_profiles(device_id=body.device_id) if p["name"] == name]
     if existing:
-        raise HTTPException(status_code=409, detail="כבר יש בלש עם השם הזה")
-    profile = store.create_profile(name, body.avatar)
+        raise HTTPException(status_code=409, detail="כבר יש בלש עם השם הזה במכשיר")
+    profile = store.create_profile(name, body.avatar, body.device_id)
     logger.info("Created profile %s (%s)", profile["id"], name)
+    return profile
+
+
+@app.post("/api/profiles/link")
+def link_profile(body: ProfileLink, store=Depends(get_store)) -> dict:
+    profile = store.link_device(body.link_code, body.device_id)
+    if profile is None:
+        raise HTTPException(status_code=404, detail="קוד צירוף לא נמצא — בדקו את הספרות ונסו שוב")
+    logger.info("Linked profile %s to a new device", profile["id"])
     return profile
 
 
@@ -129,15 +147,22 @@ def get_history(profile_id: str, store=Depends(get_store)) -> dict:
     return {"history": store.get_history(profile_id)}
 
 
+ANONYMOUS_NAMES = ["בלש סודי", "חוקר מסתורי", "סוכן חשאי", "בלש אלמוני", "חוקרת מסווה", "צל חמקמק"]
+
+
 @app.get("/api/leaderboard")
-def leaderboard(store=Depends(get_store)) -> dict:
+def leaderboard(viewer: Optional[str] = None, store=Depends(get_store)) -> dict:
+    """Family board. Kid-safe: every profile except the viewer is anonymized —
+    the kid sees their own relative position without knowing who is who."""
     rows = []
     for profile in store.list_profiles():
         progress = store.get_progress(profile["id"])
+        is_me = profile["id"] == viewer
         rows.append({
-            "id": profile["id"],
-            "name": profile["name"],
-            "avatar": profile["avatar"],
+            "id": profile["id"] if is_me else None,
+            "is_me": is_me,
+            "name": profile["name"] if is_me else None,
+            "avatar": profile["avatar"] if is_me else None,
             "xp": progress.xp,
             "rank": rank_for_xp(progress.xp),
             "streak": progress.streak,
@@ -145,6 +170,10 @@ def leaderboard(store=Depends(get_store)) -> dict:
             "total_stars": sum(progress.stars.values()),
         })
     rows.sort(key=lambda r: r["xp"], reverse=True)
+    for i, row in enumerate(rows):
+        if not row["is_me"]:
+            row["name"] = ANONYMOUS_NAMES[i % len(ANONYMOUS_NAMES)]
+            row["avatar"] = "🕵️"
     return {"leaderboard": rows}
 
 

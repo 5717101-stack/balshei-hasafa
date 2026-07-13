@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api } from './api'
+import { getDeviceId } from './utils'
 import type { Profile, Progress } from './types'
 import { ProfilePicker } from './screens/ProfilePicker'
 import { CaseMap } from './screens/CaseMap'
@@ -36,7 +37,7 @@ export function App() {
       return
     }
     api
-      .listProfiles()
+      .listProfiles(getDeviceId())
       .then(async ({ profiles }) => {
         const saved = profiles.find((p) => p.id === savedId)
         if (saved) {
